@@ -7,7 +7,7 @@ To install all required dependencies, please run the following commands in the p
 conda create —n ha python=3.8
 conda activate ha
 
-pip install numpy==1.23.0 tensorflow procgen pyyaml
+pip install numpy==1.23.0 tensorflow procgen pyyaml wandb
 pip3 install torch torchvision torchaudio
 
 pip install -e .
