@@ -140,8 +140,13 @@ def main(config):
 
             logger.logkv("train/total_num_steps", total_num_steps)
             logger.logkv("train/time_per_epoch", time_per_epoch)
+
+            wandb.log({'train/total_num_steps': total_num_steps,
+                          'train/time_per_epoch': time_per_epoch,
+                     })
             for key, val in train_statistics.items():
                 logger.logkv("train/{}".format(key), val)
+                wandb.log({'train/{}'.format(key): val})
 
             # Fetch reward normalizing variables
             norm_infos = envs.normalization_infos()
