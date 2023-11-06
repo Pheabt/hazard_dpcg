@@ -142,11 +142,12 @@ def main(config):
             logger.logkv("train/time_per_epoch", time_per_epoch)
 
             wandb.log({'train/total_num_steps': total_num_steps,
-                          'train/time_per_epoch': time_per_epoch,
+                       'train/time_per_epoch': time_per_epoch,
                      })
             for key, val in train_statistics.items():
                 logger.logkv("train/{}".format(key), val)
-                wandb.log({'train/{}'.format(key): val})
+                wandb.log({'train/total_num_steps': total_num_steps,
+                           'train/{}'.format(key): val})
 
             # Fetch reward normalizing variables
             norm_infos = envs.normalization_infos()
@@ -179,7 +180,8 @@ def main(config):
             logger.logkv("train/med_episode_step", np.median(train_episode_steps))
             logger.logkv("train/std_episode_step", np.std(train_episode_steps))
 
-            wandb.log({'train/mean_episode_reward': np.mean(train_episode_rewards),
+            wandb.log({'total_num_steps': total_num_steps,
+                       'train/mean_episode_reward': np.mean(train_episode_rewards),
                        'train/med_episode_reward': np.median(train_episode_rewards),
                        'train/std_episode_reward': np.std(train_episode_rewards),
                        'train/mean_episode_step': np.mean(train_episode_steps),
@@ -189,7 +191,8 @@ def main(config):
 
             for key, val in train_value_statistics.items():
                 logger.logkv("train/{}".format(key), val) 
-                wandb.log({'train/{}'.format(key): val})
+                wandb.log({'train/total_num_steps': total_num_steps,
+                    'train/{}'.format(key): val})
 
             # Evaluate actor-critic on test environments
             test_eval_statistics, *_ = evaluate(
@@ -219,7 +222,8 @@ def main(config):
             logger.logkv("test/med_episode_step", np.median(test_episode_steps))
             logger.logkv("test/std_episode_step", np.std(test_episode_steps))
 
-            wandb.log({'test/mean_episode_reward': np.mean(test_episode_rewards),
+            wandb.log({ 'total_num_steps': total_num_steps,
+                        'test/mean_episode_reward': np.mean(test_episode_rewards),
                         'test/med_episode_reward': np.median(test_episode_rewards),
                         'test/std_episode_reward': np.std(test_episode_rewards),
                         'test/mean_episode_step': np.mean(test_episode_steps),
