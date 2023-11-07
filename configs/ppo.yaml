@@ -10,7 +10,7 @@ num_eval_episodes: 100
 # Environment
 distribution_mode: easy
 num_levels: 200
-start_level: 0
+start_level: 100
 num_env_steps: 1.0e+7
 normalize_reward: True
 
