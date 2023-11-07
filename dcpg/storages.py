@@ -82,6 +82,32 @@ class RolloutStorage(object):
             )
             gae = delta + gamma * gae_lambda * self.masks[step + 1] * gae
             self.returns[step] = gae + self.value_preds[step]
+            #print('.................normal_self.returns', self.returns)
+
+    def compute_average_gae_returns(self, next_value: Tensor, gammas: list, gae_lambda: float):
+        self.value_preds[-1] = next_value
+        num_steps = self.rewards.size(0)
+        num_gammas = len(gammas)
+        returns_avg = torch.zeros_like(self.returns)
+
+        # 对每个gamma值计算GAE
+        for gamma in gammas:
+            gae = 0
+            for step in reversed(range(num_steps)):
+                delta = (
+                    self.rewards[step]
+                    + gamma * self.value_preds[step + 1] * self.masks[step + 1]
+                    - self.value_preds[step]
+                )
+                gae = delta + gamma * gae_lambda * self.masks[step + 1] * gae
+                self.returns[step] = gae + self.value_preds[step]
+            # 累加所有gamma值的returns
+            returns_avg[:num_steps] += self.returns[:num_steps]
+
+        # 计算平均returns
+        self.returns = returns_avg / num_gammas
+        #print('.................average_self.returns', self.returns)
+
 
     def compute_advantages(self):
         self.advantages = self.returns[:-1] - self.value_preds[:-1]

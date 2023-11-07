@@ -127,23 +127,31 @@ def main(config):
             next_critic_outputs = actor_critic.forward_critic(rollouts.obs[-1])
             next_value = next_critic_outputs["value"]
 
-        if j % config["log_interval"] == 0:
-            # Train statistics
-            now_steps = (j + 1) * config["num_processes"] * config["num_steps"]
+        if args.use_which_gae == 'normal':
+            
+            if j % config["log_interval"] == 0:
+                # Train statistics
+                now_steps = (j + 1) * config["num_processes"] * config["num_steps"]
 
-        if config["gamma_type"] == 'decrease':
-            gamma = linearly_decreasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
-        elif config["gamma_type"] == 'increase':
-            gamma = linearly_increasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
-        elif config["gamma_type"] == 'random':
-            gamma = randomly_varying_gamma(config["start_gamma"], config["end_gamma"])
+            if config["gamma_type"] == 'decrease':
+                gamma = linearly_decreasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
+            elif config["gamma_type"] == 'increase':
+                gamma = linearly_increasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
+            elif config["gamma_type"] == 'random':
+                gamma = randomly_varying_gamma(config["start_gamma"], config["end_gamma"])
 
+            print("gamma" , gamma)
+            # print("steps", now_steps)
+            # print("num_env_steps", config["num_env_steps"])
+            rollouts.compute_returns(next_value, gamma, config["gae_lambda"])
 
-        print("gamma" , gamma)
-        # print("steps", now_steps)
-        # print("num_env_steps", config["num_env_steps"])
+        elif args.use_which_gae == 'average':
+            gammas = [0.80, 0.90, 0.99, 0.95, 0.999]
+            rollouts.compute_average_gae_returns(next_value, gammas, config["gae_lambda"])
 
-        rollouts.compute_returns(next_value, gamma, config["gae_lambda"])
+        elif args.use_which_gae == 'fixed':
+            rollouts.compute_returns(next_value, config["gamma"], config["gae_lambda"])
+
         rollouts.compute_advantages()
 
         # Update actor-critic
@@ -338,6 +346,7 @@ if __name__ == "__main__":
 
     parser.add_argument('--use_offline_wandb', action='store_true', help='use offline wandb')
 
+    parser.add_argument('--use_which_gae', type=str, default='normal', choices=['average', 'normal', 'fixed'], help='Just use normal gae can use gamma_type and start_gamma, end_gamma ')
     parser.add_argument('--gamma_type', type=str, default='random', choices=['increase', 'decrease', 'random'])
     parser.add_argument('--start_gamma', type=float, default=0.95)
     parser.add_argument('--end_gamma', type=float, default=0.99)
