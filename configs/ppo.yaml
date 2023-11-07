@@ -11,7 +11,7 @@ num_eval_episodes: 100
 distribution_mode: easy
 num_levels: 200
 start_level: 0
-num_env_steps: 2.5e+7
+num_env_steps: 1.0e+7
 normalize_reward: True
 
 # Rollout

@@ -45,7 +45,8 @@ def main(config):
     # wandb
     if args.use_offline_wandb:
         os.environ['WANDB_MODE'] = 'dryrun'
-    args.exp_id = f"{args.exp_name}_{args.env_name}"
+    args.exp_id = f"{args.exp_name}_{args.env_name}_{args.use_which_gae}_{args.flag}"
+    print("id", args.exp_id)
     wandb.init(project='ICDE', name=args.exp_id, entity="mingatum")
     wandb.config.update(args)
 
@@ -343,6 +344,7 @@ if __name__ == "__main__":
     parser.add_argument("--env_name", type=str, required=True)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--flag", type=str, default='f')
 
     parser.add_argument('--use_offline_wandb', action='store_true', help='use offline wandb')
 
