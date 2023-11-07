@@ -18,6 +18,17 @@ from dcpg.storages import RolloutStorage
 from test import evaluate
 import wandb
 
+def linearly_decreasing_gamma(timestep, start_gamma, end_gamma, num_timesteps):
+    gamma = start_gamma - (start_gamma - end_gamma) * timestep / num_timesteps
+    return gamma
+
+def linearly_increasing_gamma(timestep, start_gamma, end_gamma, num_timesteps):
+    gamma = start_gamma + (end_gamma - start_gamma) * timestep / num_timesteps
+    return gamma
+
+def randomly_varying_gamma(start_gamma, end_gamma):
+    gamma = np.random.uniform(start_gamma, end_gamma)
+    return gamma
 
 def main(config):
     # Fix random seed
@@ -32,6 +43,8 @@ def main(config):
     device = torch.device("cuda:0" if cuda else "cpu")
 
     # wandb
+    if args.use_offline_wandb:
+        os.environ['WANDB_MODE'] = 'dryrun'
     args.exp_id = f"{args.exp_name}_{args.env_name}"
     wandb.init(project='ICDE', name=args.exp_id, entity="mingatum")
     wandb.config.update(args)
@@ -113,7 +126,24 @@ def main(config):
         with torch.no_grad():
             next_critic_outputs = actor_critic.forward_critic(rollouts.obs[-1])
             next_value = next_critic_outputs["value"]
-        rollouts.compute_returns(next_value, config["gamma"], config["gae_lambda"])
+
+        if j % config["log_interval"] == 0:
+            # Train statistics
+            now_steps = (j + 1) * config["num_processes"] * config["num_steps"]
+
+        if config["gamma_type"] == 'decrease':
+            gamma = linearly_decreasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
+        elif config["gamma_type"] == 'increase':
+            gamma = linearly_increasing_gamma(now_steps, config["start_gamma"], config["end_gamma"], config["num_env_steps"])
+        elif config["gamma_type"] == 'random':
+            gamma = randomly_varying_gamma(config["start_gamma"], config["end_gamma"])
+
+
+        print("gamma" , gamma)
+        # print("steps", now_steps)
+        # print("num_env_steps", config["num_env_steps"])
+
+        rollouts.compute_returns(next_value, gamma, config["gae_lambda"])
         rollouts.compute_advantages()
 
         # Update actor-critic
@@ -306,6 +336,12 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--debug", action="store_true")
 
+    parser.add_argument('--use_offline_wandb', action='store_true', help='use offline wandb')
+
+    parser.add_argument('--gamma_type', type=str, default='random', choices=['increase', 'decrease', 'random'])
+    parser.add_argument('--start_gamma', type=float, default=0.95)
+    parser.add_argument('--end_gamma', type=float, default=0.99)
+
     args = parser.parse_args()
 
     # Load config
@@ -317,6 +353,9 @@ if __name__ == "__main__":
     config["env_name"] = args.env_name
     config["seed"] = args.seed
     config["debug"] = args.debug
+    config["gamma_type"] = args.gamma_type
+    config["start_gamma"] = args.start_gamma
+    config["end_gamma"] = args.end_gamma
 
     # Run main
     main(config)

@@ -1,0 +1,6 @@
+__pycache__/
+/dcpg.egg-info/
+/logs/
+/models/
+/outputs/
+/wandb/
