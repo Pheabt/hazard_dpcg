@@ -340,14 +340,13 @@ if __name__ == "__main__":
     # Argument
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--exp_name", type=str, required=True)
-    parser.add_argument("--env_name", type=str, required=True)
+    parser.add_argument("--exp_name", type=str, default='ppo')
+    parser.add_argument("--env_name", type=str, default='miner')
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--flag", type=str, default='f')
 
     parser.add_argument('--use_offline_wandb', action='store_true', help='use offline wandb')
-
     parser.add_argument('--use_which_gae', type=str, default='normal', choices=['average', 'normal', 'fixed'], help='Just use normal gae can use gamma_type and start_gamma, end_gamma ')
     parser.add_argument('--gamma_type', type=str, default='random', choices=['increase', 'decrease', 'random'])
     parser.add_argument('--start_gamma', type=float, default=0.95)
