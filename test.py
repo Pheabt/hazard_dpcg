@@ -10,6 +10,7 @@ def evaluate(config, actor_critic, device, test_envs=True, norm_infos=None):
 
     # Create environments
     if test_envs:
+        # ppo test num_levels 0 start_level 0
         envs = make_envs(
             num_envs=config["num_eval_episodes"],
             env_name=config["env_name"],
@@ -20,6 +21,7 @@ def evaluate(config, actor_critic, device, test_envs=True, norm_infos=None):
             device=device,
         )
     else:
+        # ppo train num_levels 200 start_level 0
         envs = make_envs(
             num_envs=config["num_eval_episodes"],
             env_name=config["env_name"],
