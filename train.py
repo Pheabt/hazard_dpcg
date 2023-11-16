@@ -128,7 +128,7 @@ def main(config):
             next_critic_outputs = actor_critic.forward_critic(rollouts.obs[-1])
             next_value = next_critic_outputs["value"]
 
-        if args.use_which_gae == 'normal':
+        if args.use_which_gae == 'dynamic':
             
             if j % config["log_interval"] == 0:
                 # Train statistics
@@ -142,8 +142,6 @@ def main(config):
                 gamma = randomly_varying_gamma(config["start_gamma"], config["end_gamma"])
 
             print("gamma" , gamma)
-            # print("steps", now_steps)
-            # print("num_env_steps", config["num_env_steps"])
             rollouts.compute_returns(next_value, gamma, config["gae_lambda"])
 
         elif args.use_which_gae == 'average':
@@ -347,10 +345,10 @@ if __name__ == "__main__":
     parser.add_argument("--flag", type=str, default='f')
 
     parser.add_argument('--use_offline_wandb', action='store_true', help='use offline wandb')
-    parser.add_argument('--use_which_gae', type=str, default='normal', choices=['average', 'normal', 'fixed'], help='Just use normal gae can use gamma_type and start_gamma, end_gamma ')
+    parser.add_argument('--use_which_gae', type=str, default='dynamic', choices=['average', 'dynamic', 'fixed'], help='Just use normal gae can use gamma_type and start_gamma, end_gamma ')
     parser.add_argument('--gamma_type', type=str, default='random', choices=['increase', 'decrease', 'random'])
-    parser.add_argument('--start_gamma', type=float, default=0.95)
-    parser.add_argument('--end_gamma', type=float, default=0.99)
+    parser.add_argument('--start_gamma', type=float, default=0.80)
+    parser.add_argument('--end_gamma', type=float, default=0.999)
 
     args = parser.parse_args()
 

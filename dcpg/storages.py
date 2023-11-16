@@ -84,6 +84,23 @@ class RolloutStorage(object):
             self.returns[step] = gae + self.value_preds[step]
             #print('.................normal_self.returns', self.returns)
 
+
+
+    # def compute_returns(self, next_value: Tensor, gamma: float, gae_lambda: float):
+    #     self.value_preds[-1] = next_value
+    #     for step in reversed(range(self.rewards.size(0))):
+    #         delta = (
+    #                 self.rewards[step]
+    #                 + gamma * self.value_preds[step + 1] * self.masks[step + 1]
+    #                 - self.value_preds[step]
+    #         )
+    #         self.returns[step] = delta + self.value_preds[step]
+    #         # print('.................normal_self.returns', self.returns)
+
+
+
+
+
     def compute_average_gae_returns(self, next_value: Tensor, gammas: list, gae_lambda: float):
         self.value_preds[-1] = next_value
         num_steps = self.rewards.size(0)

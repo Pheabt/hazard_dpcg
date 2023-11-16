@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 
-class PPO:
+class Hazard:
     """
-    Proximal Policy Optimization (PPO)
+    Build on Proximal Policy Optimization (PPO)
     """
 
     def __init__(

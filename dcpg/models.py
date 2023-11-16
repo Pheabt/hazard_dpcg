@@ -481,3 +481,15 @@ class PPODynaModel(PPOModel):
         inputs_cat = self.concat_sas(features, actions, next_features)
         dyna_logits = self.dyna_layer(inputs_cat)
         return dyna_logits
+
+
+
+
+
+
+
+
+
+
+
+
