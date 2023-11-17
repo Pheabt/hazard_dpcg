@@ -1,5 +1,4 @@
 from typing import Dict, Optional, Sequence, Tuple, Union
-
 import torch
 from torch import Tensor
 import torch.nn as nn
@@ -481,6 +480,152 @@ class PPODynaModel(PPOModel):
         inputs_cat = self.concat_sas(features, actions, next_features)
         dyna_logits = self.dyna_layer(inputs_cat)
         return dyna_logits
+
+
+
+
+
+
+class HazardModel(nn.Module):
+
+    def __init__(
+            self,
+            obs_shape: Sequence[int],
+            num_actions: int,
+            shared: bool = True,
+            **kwargs,
+    ):
+        super().__init__()
+
+        # Encoder
+        self.actor_key = "actor"
+        self.critic_key = "actor" if shared else "critic"
+        self.true_keys = list(set([self.actor_key, self.critic_key]))
+
+        self.encoders = nn.ModuleDict()
+        for key in self.true_keys:
+            self.encoders[key] = ResNetEncoder(obs_shape, **kwargs)
+
+        # Actor
+        self.actor_feature_dim = self.encoders[self.actor_key].feature_dim
+        self.actor_heads = nn.ModuleDict()
+        self.actor_heads["dist"] = Categorical(self.actor_feature_dim, num_actions)
+
+        # Critic
+        self.critic_feature_dim = self.encoders[self.critic_key].feature_dim
+        self.critic_heads = nn.ModuleDict()
+        self.critic_heads["value"] = init_(nn.Linear(self.critic_feature_dim, 1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def act(
+            self,
+            obs: Tensor,
+            deterministic: bool = False,
+    ) -> Union[Tensor, Tensor, Tensor]:
+        """
+        Sample actions
+        """
+        # Forward obs
+        actor_outputs, critic_outputs = self.forward(obs)
+
+        # Sample actions
+        dists = actor_outputs["dist"]
+        actions = dists.mode() if deterministic else dists.sample()
+        action_log_probs = dists.log_probs(actions)
+
+        # Get values
+        values = critic_outputs["value"]
+
+        return actions, action_log_probs, values
+
+    def forward(
+            self,
+            obs: Tensor,
+    ) -> Tuple[Dict[str, Union[Tensor, FixedCategorical]], Dict[str, Tensor]]:
+        """
+        Forward
+        """
+        # Encoder
+        features = dict()
+        for key in self.true_keys:
+            features[key] = self.encoders[key](obs)
+        actor_features = features[self.actor_key]
+        critic_features = features[self.critic_key]
+
+        # Actor
+        actor_outputs = dict()
+        actor_outputs["actor_feature"] = actor_features
+        actor_outputs.update(self.forward_actor_heads(actor_features))
+
+        # Critic
+        critic_outputs = dict()
+        critic_outputs["critic_feature"] = critic_features
+        critic_outputs.update(self.forward_critic_heads(critic_features))
+
+        return actor_outputs, critic_outputs
+
+    def forward_actor(self, obs: Tensor) -> Dict[str, Union[Tensor, FixedCategorical]]:
+        """
+        Forward actor
+        """
+        # Encoder
+        actor_features = self.encoders[self.actor_key](obs)
+
+        # Actor
+        actor_outputs = dict()
+        actor_outputs["actor_feature"] = actor_features
+        actor_outputs.update(self.forward_actor_heads(actor_features))
+
+        return actor_outputs
+
+    def forward_critic(self, obs: Tensor) -> Dict[str, Tensor]:
+        """
+        Forward critic
+        """
+        # Encoder
+        critic_features = self.encoders[self.critic_key](obs)
+
+        # Critic
+        critic_outputs = dict()
+        critic_outputs["critic_feature"] = critic_features
+        critic_outputs.update(self.forward_critic_heads(critic_features))
+
+        return critic_outputs
+
+    def forward_actor_heads(
+            self,
+            actor_features: Tensor,
+    ) -> Dict[str, Union[Tensor, FixedCategorical]]:
+        """
+        Forward policy head
+        """
+        actor_head_outputs = dict()
+        actor_head_outputs["dist"] = self.actor_heads["dist"](actor_features)
+
+        return actor_head_outputs
+
+
+
+    def forward_critic_heads(self, critic_features: Tensor) -> Dict[str, Tensor]:
+        """
+        Forward value head
+        """
+        critic_head_outputs = dict()
+        critic_head_outputs["value"] = self.critic_heads["value"](critic_features)
+
+        return critic_head_outputs
+
 
 
 

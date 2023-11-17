@@ -10,4 +10,3 @@
 source ~/.bashrc
 source activate ha
 python train.py  --env_name miner --exp_name ppo  --use_which_gae average  --flag ppo_multi
-#python train.py  --env_name miner --exp_name ddcpg  --use_which_gae fixed  --flag ddcpg085wo

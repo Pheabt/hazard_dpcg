@@ -1,6 +1,58 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
+from collections import deque
+import copy
+
+
+
+
+
+class Buffer:
+    def __init__(self, buffer_size, device):
+        self.segs = deque(maxlen=buffer_size)
+        self.device = device
+
+    def __len__(self):
+        return len(self.segs)
+
+    def insert(self, seg):
+        self.segs.append(seg)
+
+    def feed_forward_generator(self, num_mini_batch=None, mini_batch_size=None):
+        num_processes = self.segs[0]["obs"].size(1)
+        num_segs = len(self.segs)
+        batch_size = num_processes * num_segs
+
+        if mini_batch_size is None:
+            mini_batch_size = num_processes // num_mini_batch
+
+        sampler = BatchSampler(
+            SubsetRandomSampler(range(batch_size)), mini_batch_size, drop_last=True
+        )
+
+        for indices in sampler:
+            obs = []
+            returns = []
+
+            for idx in indices:
+                process_idx = idx // num_segs
+                seg_idx = idx % num_segs
+
+                seg = self.segs[seg_idx]
+                obs.append(seg["obs"][:, process_idx])
+                returns.append(seg["returns"][:, process_idx])
+
+            obs = torch.stack(obs, dim=1).to(self.device)
+            returns = torch.stack(returns, dim=1).to(self.device)
+
+            obs_batch = obs[:-1].view(-1, *obs.size()[2:])
+            returns_batch = returns[:-1].view(-1, 1)
+
+            yield obs_batch, returns_batch
+
+
 
 
 class Hazard:

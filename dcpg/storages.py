@@ -126,11 +126,19 @@ class RolloutStorage(object):
         #print('.................average_self.returns', self.returns)
 
 
+
+
     def compute_advantages(self):
         self.advantages = self.returns[:-1] - self.value_preds[:-1]
         mean = self.advantages.mean()
         std = self.advantages.std()
         self.advantages = (self.advantages - mean) / (std + 1e-5)
+
+
+
+
+
+
 
     def feed_forward_generator(
         self,
